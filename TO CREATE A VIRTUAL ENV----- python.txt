@@ -1,5 +1,0 @@
-TO CREATE A VIRTUAL ENV----- python -m venv venv
-Then to activate VENV--------venv\Scripts\activate
-
-FOR GROPQ API---GO TO GROQ THEN GENERATE API
-FOR HUGGINGFACE API TOKEN OR HF TOKEN-----GO TO HUGGING FACE then Access token- Gibe name -Write Mode -Create Token
