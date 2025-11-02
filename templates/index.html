@@ -1,81 +1,178 @@
-<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-
 <!DOCTYPE html>
-<html>
-	<head>
-		<title>Chatbot</title>
-		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css')}}"/>
-	</head>
-	
-	
-	<body>
-		<div class="container-fluid h-100">
-			<div class="row justify-content-center h-100">		
-				<div class="col-md-8 col-xl-6 chat">
-					<div class="card">
-						<div class="card-header msg_head">
-							<div class="d-flex bd-highlight">
-								<div class="img_cont">
-									<!-- <img src="https://i.ibb.co/fSNP7Rz/icons8-chatgpt-512.png" class="rounded-circle user_img"> -->
-									<img src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png" class="rounded-circle user_img">
-									<span class="online_icon"></span>
-								</div>
-								<div class="user_info">
-									<span>Flipkart Chatbot</span>
-									<p>Ask me anything!</p>
-								</div>
-							</div>
-						</div>
-						<div id="messageFormeight" class="card-body msg_card_body">
-							
-							
-						</div>
-						<div class="card-footer">
-							<form id="messageArea" class="input-group">
-                                <input type="text" id="text" name="msg" placeholder="Type your message..." autocomplete="off" class="form-control type_msg" required/>
-								<div class="input-group-append">
-									<button type="submit" id="send" class="input-group-text send_btn"><i class="fas fa-location-arrow"></i></button>
-								</div>
-							</form>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<script>
-			$(document).ready(function() {
-				$("#messageArea").on("submit", function(event) {
-					const date = new Date();
-					const hour = date.getHours();
-					const minute = date.getMinutes();
-					const str_time = hour+":"+minute;
-					var rawText = $("#text").val();
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Flipkart Smart Assistant</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="logo" class="brand-logo" />
+        <div>
+          <h1>Flipkart Smart Assistant</h1>
+          <p class="tag">Ask, Discover & Shop Smarter</p>
+        </div>
+      </div>
+    </header>
 
-					var userHtml = '<div class="d-flex justify-content-end mb-4"><div class="msg_cotainer_send">' + rawText + '<span class="msg_time_send">'+ str_time + '</span></div><div class="img_cont_msg"><img src="https://i.ibb.co/d5b84Xw/Untitled-design.png" class="rounded-circle user_img_msg"></div></div>';
-					
-					$("#text").val("");
-					$("#messageFormeight").append(userHtml);
+    <main class="main-area">
+      <section class="chat-panel" id="chat-panel">
+        <!-- initial welcome bubble -->
+        <div class="bubble bot">
+          <strong>👋 Hi! I’m your Flipkart AI shopping assistant.</strong><br>
+          Ask anything — e.g. “5 phones under ₹50,000” or “best laptops under 60k”.
+        </div>
+      </section>
 
-					$.ajax({
-						data: {
-							msg: rawText,	
-						},
-						type: "POST",
-						url: "/get",
-					}).done(function(data) {
-						var botHtml = '<div class="d-flex justify-content-start mb-4"><div class="img_cont_msg"><img src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png" class="rounded-circle user_img_msg"></div><div class="msg_cotainer">' + data + '<span class="msg_time">' + str_time + '</span></div></div>';
-						$("#messageFormeight").append($.parseHTML(botHtml));
-					});
-					event.preventDefault();
-				});
-			});
-		</script>
-        
-    </body>
+      <aside class="product-panel" id="product-panel" aria-live="polite">
+        <div id="product-header" class="product-header hidden"></div>
+        <div id="product-grid" class="product-grid"></div>
+      </aside>
+    </main>
+
+    <footer class="composer">
+      <form id="chat-form" class="composer-form" autocomplete="off">
+        <input id="user-input" name="msg" type="text" placeholder="Search products or chat with AI..." />
+        <button type="submit" aria-label="send">➤</button>
+      </form>
+    </footer>
+  </div>
+
+  <script>
+    const chatPanel = document.getElementById('chat-panel');
+    const productPanel = document.getElementById('product-panel');
+    const productGrid = document.getElementById('product-grid');
+    const productHeader = document.getElementById('product-header');
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+
+    function createBubble(text, cls = 'bot') {
+      const div = document.createElement('div');
+      div.className = `bubble ${cls}`;
+      // if text has HTML (explanation may be HTML from LLM) render it
+      if (/<[a-z][\s\S]*>/i.test(text)) div.innerHTML = text;
+      else div.textContent = text;
+      chatPanel.appendChild(div);
+      chatPanel.scrollTop = chatPanel.scrollHeight;
+      return div;
+    }
+
+    function clearProducts() {
+      productHeader.classList.add('hidden');
+      productGrid.innerHTML = '';
+    }
+
+    function renderProducts(products, query) {
+      productHeader.classList.remove('hidden');
+      productHeader.innerHTML = `<strong>Results for:</strong> <span class="query-text">${escapeHtml(query)}</span>`;
+
+      productGrid.innerHTML = products.map((p, idx) => {
+        const id = p.id || `prod-${idx+1}`;
+        const title = escapeHtml(p.title || 'Unknown Product');
+        const summary = escapeHtml(p.summary || '');
+        const rating = escapeHtml(String(p.rating || 'N/A'));
+        return `
+          <article class="product-card" id="${id}">
+            <div class="thumb" aria-hidden="true">📦</div>
+            <h3 class="prod-title">${title}</h3>
+            <p class="prod-desc">${summary}</p>
+            <div class="card-foot">
+              <div class="rating">⭐ ${rating}</div>
+              <button class="btn primary view-btn" data-id="${id}">View</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+      productPanel.scrollTop = productPanel.scrollHeight;
+      // attach click behavior (delegate)
+      productGrid.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = btn.dataset.id;
+          const el = document.getElementById(id);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('highlight');
+            setTimeout(()=>el.classList.remove('highlight'), 1200);
+          }
+        });
+      });
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function showTyping() {
+      const loader = document.createElement('div');
+      loader.className = 'bubble bot typing';
+      loader.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+      chatPanel.appendChild(loader);
+      chatPanel.scrollTop = chatPanel.scrollHeight;
+      return loader;
+    }
+
+    chatForm.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const msg = userInput.value.trim();
+      if (!msg) return;
+      userInput.value = '';
+      createBubble(msg, 'user');
+
+      // show typing
+      const loader = showTyping();
+
+      try {
+        const formData = new FormData();
+        formData.append('msg', msg);
+        const res = await fetch('/recommend', { method: 'POST', body: formData });
+        const data = await res.json(); // expected { intent, explanation, products }
+
+        // remove typing
+        loader.remove();
+
+        // If explanation present and intent is not pure shopping, show it
+        if (data.explanation && (!data.products || data.products.length === 0)) {
+          createBubble(data.explanation, 'bot');
+          clearProducts();
+          return;
+        }
+
+        // If products exist, render product grid and a short bot bubble (optional)
+        if (data.products && data.products.length > 0) {
+          // optional short label bubble
+          const label = `Showing ${data.products.length} result${data.products.length>1?'s':''}`;
+          createBubble(label, 'bot');
+
+          // render product cards grid side-by-side
+          renderProducts(data.products, msg);
+        } else {
+          // fallback polite reply
+          createBubble(data.explanation || "I couldn't find products matching that.", 'bot');
+          clearProducts();
+        }
+
+      } catch (err) {
+        loader.remove();
+        createBubble('⚠️ Server error — please try again.', 'bot');
+        console.error(err);
+      }
+    });
+
+    // allow pressing Enter to focus and submit quickly
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatForm.requestSubmit();
+      }
+    });
+  </script>
+</body>
 </html>
