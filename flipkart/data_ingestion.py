@@ -32,26 +32,26 @@ class DataIngestor:
         # Fast-path: reuse if collection already exists
         try:
             test_results = self.store.similarity_search("test", k=1)
-            print(f"✅ Existing collection found in Astra DB. Skipping re-ingestion for fast startup.")
+            print(f"Existing collection found in Astra DB. Skipping re-ingestion for fast startup.")
             return self.store
         except Exception as e:
-            print(f"⚠️ Could not verify collection existence: {e}")
-            print(f"🆕 Creating new Astra DB collection and ingesting data...")
+            print(f"Could not verify collection existence: {e}")
+            print(f"Creating new Astra DB collection and ingesting data...")
 
         # Only re-ingest if explicitly requested or collection is missing
         if update_existing or not os.path.exists(self.csv_path):
             if not os.path.exists(self.csv_path):
-                raise FileNotFoundError(f"❌ CSV file not found at {self.csv_path}")
-            print(f"📂 Loading dataset: {self.csv_path}")
+                raise FileNotFoundError(f"CSV file not found at {self.csv_path}")
+            print(f"Loading dataset: {self.csv_path}")
 
             converter = DataConverter(self.csv_path)
             docs = converter.convert()
-            print(f"📦 Prepared {len(docs)} product documents...")
+            print(f"Prepared {len(docs)} product documents...")
 
             try:
                 self.store.add_documents(docs)
-                print(f"✅ Successfully ingested {len(docs)} records into Astra DB.")
+                print(f"Successfully ingested {len(docs)} records into Astra DB.")
             except Exception as e:
-                print(f"⚠️ AstraDB ingestion error: {e}")
+                print(f"AstraDB ingestion error: {e}")
 
         return self.store
